@@ -1084,6 +1084,19 @@
                 });
             }
 
+            // Load appearance settings
+            database.ref('appearance').once('value').then(function(snapshot) {
+                const appearance = snapshot.val();
+                
+                if (appearance && appearance.heroBgImage) {
+                    // Update hero background
+                    const heroSection = document.querySelector('.hero');
+                    heroSection.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('${appearance.heroBgImage}')`;
+                }
+            }).catch(function(error) {
+                console.error('Error loading appearance settings:', error);
+            });
+
             // Cek apakah data pembalap sudah ada di Firebase
             database.ref('riders').once('value').then(function(snapshot) {
                 const riders = snapshot.val();
