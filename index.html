@@ -508,23 +508,37 @@
         /* Live Results Section */
         .live-results {
             background-color: var(--dark-gray);
-            padding: 40px 0;
-            position: sticky;
+            padding: 20px 0;
+            position: fixed;
             bottom: 0;
+            left: 0;
+            right: 0;
             box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
             z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .live-results.collapsed {
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .live-results.expanded {
+            height: auto;
         }
 
         .live-results-container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 15px;
         }
 
         .live-results-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
         }
 
         .live-results-title {
@@ -549,11 +563,21 @@
             100% { opacity: 1; }
         }
 
+        .toggle-icon {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
         .gp-info {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .gp-flag {
@@ -1250,9 +1274,9 @@
     </div>
 
     <!-- Live Results Section -->
-    <div class="live-results" id="live-results">
-        <div class="container live-results-container">
-            <div class="live-results-header">
+    <div class="live-results collapsed" id="live-results">
+        <div class="live-results-container">
+            <div class="live-results-header" id="live-results-header">
                 <h3 class="live-results-title">
                     <span class="live-indicator"></span>
                     Hasil Voting Live
@@ -1261,6 +1285,7 @@
                     <div class="gp-flag" id="live-gp-flag">🏁</div>
                     <div class="gp-details" id="live-gp-details">Belum ada GP yang diatur</div>
                 </div>
+                <i class="fas fa-chevron-down toggle-icon" id="toggle-icon"></i>
             </div>
             <div class="live-results-grid" id="live-results-grid">
                 <!-- Live results will be added here dynamically -->
@@ -1545,6 +1570,25 @@
                     // Close mobile menu if open
                     navMenu.classList.remove('active');
                 });
+            });
+
+            // Live results toggle
+            const liveResultsHeader = document.getElementById('live-results-header');
+            const liveResults = document.getElementById('live-results');
+            const toggleIcon = document.getElementById('toggle-icon');
+            
+            liveResultsHeader.addEventListener('click', function() {
+                if (liveResults.classList.contains('collapsed')) {
+                    // Expand live results
+                    liveResults.classList.remove('collapsed');
+                    liveResults.classList.add('expanded');
+                    toggleIcon.classList.add('rotated');
+                } else {
+                    // Collapse live results
+                    liveResults.classList.remove('expanded');
+                    liveResults.classList.add('collapsed');
+                    toggleIcon.classList.remove('rotated');
+                }
             });
 
             // Search functionality
