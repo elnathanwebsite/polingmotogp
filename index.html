@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotoGP Poll - Pembalap Favorit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #e10600;
+            --secondary-color: #000000;
+            --dark-gray: #1a1a1a;
+            --light-gray: #333333;
+            --text-color: #ffffff;
+            --accent-color: #ffcc00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--dark-gray);
+            padding: 15px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .logo i {
+            margin-right: 10px;
+            font-size: 30px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 25px;
+        }
+
+        nav ul li a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+        }
+
+        nav ul li a:hover {
+            color: var(--primary-color);
+        }
+
+        .admin-link {
+            background-color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .admin-link:hover {
+            background-color: #c00500;
+            transform: translateY(-2px);
+        }
+
+        .active-tab {
+            color: var(--primary-color) !important;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80') no-repeat center center/cover;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-top: 70px;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--text-color);
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 12px 30px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-family: 'Oswald', sans-serif;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #c00500;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(225, 6, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--light-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: #444;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            background-color: var(--dark-gray);
+            padding: 15px 0;
+            margin-top: 70px;
+            display: none;
+        }
+
+        .tab-navigation.active {
+            display: block;
+        }
+
+        .tab-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 40px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Search Section */
+        .search-section {
+            background-color: var(--dark-gray);
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--secondary-color);
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+        }
+
+        .search-select {
+            padding: 12px;
+            background-color: var(--secondary-color);
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .search-btn:hover {
+            background-color: #c00500;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-tag {
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-tag i {
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+        /* Poll Section */
+        .poll-section {
+            padding: 80px 0;
+            background-color: var(--dark-gray);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title h2:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+
+        .poll-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .rider-card {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .rider-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .rider-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .rider-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .rider-info {
+            padding: 20px;
+        }
+
+        .rider-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .rider-name {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .rider-details {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            color: #cccccc;
+        }
+
+        .rider-details i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .rider-team {
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #cccccc;
+        }
+
+        .vote-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .vote-btn:hover {
+            background-color: #c00500;
+        }
+
+        .vote-btn.voted {
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+        }
+
+        .vote-count {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Results Section */
+        .results-section {
+            padding: 80px 0;
+            background-color: var(--secondary-color);
+        }
+
+        .results-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .result-item {
+            margin-bottom: 25px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .result-header h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .result-percentage {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 25px;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+            position: relative;
+        }
+
+        .progress:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Live Results Section */
+        .live-results {
+            background-color: var(--dark-gray);
+            padding: 40px 0;
+            position: sticky;
+            bottom: 0;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .live-results-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .live-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .live-results-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .gp-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .gp-flag {
+            width: 30px;
+            height: 20px;
+            border-radius: 3px;
+            background-color: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .gp-details {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .live-results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .live-result-item {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-result-position {
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .live-result-info {
+            flex: 1;
+        }
+
+        .live-result-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .live-result-votes {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        /* Admin Section */
+        .admin-section {
+            background-color: var(--dark-gray);
+            min-height: calc(100vh - 70px);
+            padding-top: 20px;
+        }
+
+        .admin-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .admin-form {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .admin-table {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--secondary-color);
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .image-preview {
+            margin-top: 10px;
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            font-weight: 600;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background-color: rgba(225, 6, 0, 0.1);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+        }
+
+        .btn-edit:hover {
+            background-color: #e6b800;
+        }
+
+        .btn-delete {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .btn-delete:hover {
+            background-color: #c00500;
+        }
+
+        .admin-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Batch Import Section */
+        .batch-import {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .batch-import h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .batch-import textarea {
+            width: 100%;
+            min-height: 200px;
+            margin-bottom: 20px;
+        }
+
+        .batch-import-example {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        /* GP Management Section */
+        .gp-management {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .gp-management h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .current-gp {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .current-gp h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .current-gp-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: var(--light-gray);
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .empty-state p {
+            margin-bottom: 30px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-gray);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .social-links {
+            margin-bottom: 20px;
+        }
+
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .copyright {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 15px 25px;
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background-color: var(--dark-gray);
+                display: none;
+            }
+            
+            nav ul.active {
+                display: flex;
+            }
+            
+            .menu-toggle {
+                display: block;
+                cursor: pointer;
+            }
+            
+            .poll-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .live-results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 24px;
+            color: var(--text-color);
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--light-gray);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-motorcycle"></i>
+                <span>MotoGP Poll</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#home" class="nav-link active" data-tab="home">Beranda</a></li>
+                    <li><a href="#poll" class="nav-link" data-tab="poll">Polling</a></li>
+                    <li><a href="#results" class="nav-link" data-tab="results">Hasil</a></li>
+                    <li><a href="#admin" class="nav-link admin-link" data-tab="admin">Admin</a></li>
+                </ul>
+            </nav>
+            <div class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation for Admin -->
+    <div class="tab-navigation" id="admin-tab-nav">
+        <div class="container tab-container">
+            <button class="tab-btn active" data-admin-tab="riders">Kelola Pembalap</button>
+            <button class="tab-btn" data-admin-tab="gp">GP Management</button>
+            <button class="tab-btn" data-admin-tab="votes">Kelola Voting</button>
+        </div>
+    </div>
+
+    <!-- Home Tab -->
+    <div class="tab-content active" id="home-tab">
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <h1>Polling Pembalap MotoGP Favorit</h1>
+                <p>Pilih pembalap MotoGP favorit Anda dan lihat hasil polling secara real-time!</p>
+                <a href="#poll" class="btn">Vote Sekarang</a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Poll Tab -->
+    <div class="tab-content" id="poll-tab">
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="container search-container">
+                <form class="search-form" id="search-form">
+                    <input type="text" class="search-input" id="search-input" placeholder="Cari pembalap...">
+                    <select class="search-select" id="category-select">
+                        <option value="all">Semua Kategori</option>
+                        <option value="name">Nama</option>
+                        <option value="country">Negara</option>
+                        <option value="team">Tim</option>
+                        <option value="manufacturer">Pabrikan</option>
+                    </select>
+                    <button type="submit" class="search-btn">Cari</button>
+                </form>
+                <div class="filter-tags" id="filter-tags">
+                    <!-- Filter tags will be added here dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <section class="poll-section" id="poll">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Pilih Pembalap Favorit Anda</h2>
+                    <p>Klik tombol vote untuk memilih pembalap favorit Anda</p>
+                </div>
+                <div class="poll-container" id="riders-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Results Tab -->
+    <div class="tab-content" id="results-tab">
+        <section class="results-section" id="results">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Hasil Polling Sementara</h2>
+                    <p>Lihat hasil polling pembalap MotoGP favorit saat ini</p>
+                </div>
+                <div class="results-container" id="results-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Admin Tab -->
+    <div class="tab-content" id="admin-tab">
+        <section class="admin-section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Admin Panel</h2>
+                    <p>Kelola data pembalap dan voting</p>
+                </div>
+                
+                <!-- Riders Management Tab -->
+                <div class="admin-tab-content active" id="riders-tab">
+                    <!-- Batch Import Section -->
+                    <div class="batch-import">
+                        <h3>Import Banyak Pembalap Sekaligus</h3>
+                        <p>Salin dan tempel data pembalap dalam format berikut:</p>
+                        <div class="batch-import-example">
+                            Nama Pembalap, Nomor, Negara, Tim, Pabrikan, URL Gambar<br>
+                            Contoh:<br>
+                            Fabio Quartararo, 20, Prancis, Monster Energy Yamaha, Yamaha, https://example.com/image1.jpg<br>
+                            Francesco Bagnaia, 63, Italia, Ducati Lenovo Team, Ducati, https://example.com/image2.jpg
+                        </div>
+                        <textarea id="batch-import-textarea" placeholder="Tempel data pembalap di sini..."></textarea>
+                        <button class="btn" id="batch-import-btn">Import Pembalap</button>
+                    </div>
+                    
+                    <div class="admin-container">
+                        <div class="admin-form">
+                            <h3>Tambah/Edit Pembalap</h3>
+                            <form id="rider-form">
+                                <input type="hidden" id="rider-id">
+                                <div class="form-group">
+                                    <label for="rider-name">Nama Pembalap</label>
+                                    <input type="text" id="rider-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rider-number">Nomor Pembalap</label>
+                                    <input type="text" id="rider-number" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rider-country">Negara</label>
+                                    <input type="text" id="rider-country" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rider-team">Tim</label>
+                                    <input type="text" id="rider-team" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rider-manufacturer">Pabrikan</label>
+                                    <input type="text" id="rider-manufacturer" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rider-image">URL Gambar</label>
+                                    <input type="text" id="rider-image" required>
+                                    <div class="image-preview" id="image-preview">
+                                        <img src="" alt="Preview">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn">Simpan Pembalap</button>
+                                <button type="button" class="btn btn-secondary" id="reset-form">Reset Form</button>
+                            </form>
+                        </div>
+                        <div class="admin-table">
+                            <h3>Daftar Pembalap</h3>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Nama</th>
+                                            <th>Negara</th>
+                                            <th>Tim</th>
+                                            <th>Pabrikan</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="riders-table-body">
+                                        <tr>
+                                            <td colspan="6" class="loading">
+                                                <div class="spinner"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- GP Management Tab -->
+                <div class="admin-tab-content" id="gp-tab">
+                    <div class="admin-container">
+                        <div class="admin-form">
+                            <h3>Atur GP yang Sedang Berlangsung</h3>
+                            <div class="current-gp" id="current-gp">
+                                <h4>GP Saat Ini</h4>
+                                <div class="current-gp-info">
+                                    <div class="gp-flag" id="current-gp-flag">🏁</div>
+                                    <div class="gp-details" id="current-gp-details">Belum ada GP yang diatur</div>
+                                </div>
+                            </div>
+                            <form id="gp-form">
+                                <div class="form-group">
+                                    <label for="gp-name">Nama Sirkuit</label>
+                                    <input type="text" id="gp-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="gp-country">Nama Negara</label>
+                                    <input type="text" id="gp-country" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="gp-flag-emoji">Bendera Negara (Emoji)</label>
+                                    <input type="text" id="gp-flag-emoji" placeholder="Contoh: 🇮🇩" required>
+                                </div>
+                                <button type="submit" class="btn">Simpan GP</button>
+                            </form>
+                        </div>
+                        <div class="admin-table">
+                            <h3>Statistik Voting</h3>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Pembalap</th>
+                                            <th>Jumlah Vote</th>
+                                            <th>Persentase</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="votes-table-body">
+                                        <tr>
+                                            <td colspan="3" class="loading">
+                                                <div class="spinner"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Votes Management Tab -->
+                <div class="admin-tab-content" id="votes-tab">
+                    <div class="admin-container">
+                        <div class="admin-form">
+                            <h3>Kelola Voting</h3>
+                            <p>Atur hasil voting polling pembalap MotoGP</p>
+                            <div class="admin-actions">
+                                <button class="btn" id="reset-votes">Reset Semua Voting</button>
+                                <button class="btn btn-secondary" id="export-data">Export Data</button>
+                            </div>
+                        </div>
+                        <div class="admin-table">
+                            <h3>Statistik Voting</h3>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Pembalap</th>
+                                            <th>Jumlah Vote</th>
+                                            <th>Persentase</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="votes-table-body-admin">
+                                        <tr>
+                                            <td colspan="3" class="loading">
+                                                <div class="spinner"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Live Results Section -->
+    <div class="live-results" id="live-results">
+        <div class="container live-results-container">
+            <div class="live-results-header">
+                <h3 class="live-results-title">
+                    <span class="live-indicator"></span>
+                    Hasil Voting Live
+                </h3>
+                <div class="gp-info">
+                    <div class="gp-flag" id="live-gp-flag">🏁</div>
+                    <div class="gp-details" id="live-gp-details">Belum ada GP yang diatur</div>
+                </div>
+            </div>
+            <div class="live-results-grid" id="live-results-grid">
+                <!-- Live results will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="about">
+        <div class="container">
+            <div class="footer-content">
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+                <div class="copyright">
+                    <p>&copy; 2023 MotoGP Poll. Hak Cipta Dilindungi.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        Terima kasih telah melakukan voting!
+    </div>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXxVMHR14C2QXq8tzcm2TA5q6AReIyESM",
+            authDomain: "ethteam-66c6e.firebaseapp.com",
+            databaseURL: "https://ethteam-66c6e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ethteam-66c6e",
+            storageBucket: "ethteam-66c6e.firebasestorage.app",
+            messagingSenderId: "753594444243",
+            appId: "1:753594444243:web:2e0c722a08d7ce496fe726",
+            measurementId: "G-CKRB8MWZHN"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Data pembalap dari gambar yang diberikan
+        const ridersData = [
+            {
+                id: 'jorge-martin',
+                name: 'Jorge Martin',
+                number: '1',
+                country: 'Spanyol',
+                team: 'Aprilia Racing',
+                manufacturer: 'Aprilia',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'johann-zarco',
+                name: 'Johann Zarco',
+                number: '5',
+                country: 'Prancis',
+                team: 'CASTROL Honda LCR',
+                manufacturer: 'Honda',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'luca-marini',
+                name: 'Luca Marini',
+                number: '10',
+                country: 'Italia',
+                team: 'Honda HRC Castrol',
+                manufacturer: 'Honda',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'maverick-vinales',
+                name: 'Maverick Viñales',
+                number: '12',
+                country: 'Spanyol',
+                team: 'Red Bull KTM Tech3',
+                manufacturer: 'KTM',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'fabio-quartararo',
+                name: 'Fabio Quartararo',
+                number: '20',
+                country: 'Prancis',
+                team: 'Monster Energy Yamaha MotoGP',
+                manufacturer: 'Yamaha',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'franco-morbidelli',
+                name: 'Franco Morbidelli',
+                number: '21',
+                country: 'Italia',
+                team: 'Pertamina Enduro VR46 Racing Team',
+                manufacturer: 'Yamaha',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'enea-bastianini',
+                name: 'Enea Bastianini',
+                number: '23',
+                country: 'Italia',
+                team: 'Red Bull KTM Tech3',
+                manufacturer: 'KTM',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'raul-fernandez',
+                name: 'Raul Fernandez',
+                number: '25',
+                country: 'Spanyol',
+                team: 'Trackhouse Racing Team',
+                manufacturer: 'Aprilia',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'brad-binder',
+                name: 'Brad Binder',
+                number: '33',
+                country: 'Afrika Selatan',
+                team: 'Red Bull KTM Factory Racing',
+                manufacturer: 'KTM',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'somkiat-chantra',
+                name: 'Somkiat Chantra',
+                number: '35',
+                country: 'Thailand',
+                team: 'IDEMITSU Honda LCR',
+                manufacturer: 'Honda',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'joan-mir',
+                name: 'Joan Mir',
+                number: '36',
+                country: 'Spanyol',
+                team: 'Honda HRC Castrol',
+                manufacturer: 'Honda',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'pedro-acosta',
+                name: 'Pedro Acosta',
+                number: '37',
+                country: 'Spanyol',
+                team: 'Red Bull KTM Factory Racing',
+                manufacturer: 'KTM',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'francesco-bagnaia',
+                name: 'Francesco Bagnaia',
+                number: '63',
+                country: 'Italia',
+                team: 'Ducati Lenovo Team',
+                manufacturer: 'Ducati',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'marco-bezzecchi',
+                name: 'Marco Bezzecchi',
+                number: '72',
+                country: 'Italia',
+                team: 'Aprilia Racing',
+                manufacturer: 'Aprilia',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'alex-marquez',
+                name: 'Alex Marquez',
+                number: '73',
+                country: 'Spanyol',
+                team: 'BK8 Gresini Racing MotoGP',
+                manufacturer: 'Ducati',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'ai-ogura',
+                name: 'Ai Ogura',
+                number: '79',
+                country: 'Jepang',
+                team: 'Trackhouse Racing Team',
+                manufacturer: 'Aprilia',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'miguel-oliveira',
+                name: 'Miguel Oliveira',
+                number: '88',
+                country: 'Portugal',
+                team: 'Prima Pramac Yamaha MotoGP',
+                manufacturer: 'Yamaha',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            },
+            {
+                id: 'marc-marquez',
+                name: 'Marc Marquez',
+                number: '93',
+                country: 'Spanyol',
+                team: 'Ducati Lenovo Team',
+                manufacturer: 'Ducati',
+                image: 'https://images.unsplash.com/photo-1558981285-6f0c94906bb0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80'
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menu toggle for mobile
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navMenu = document.querySelector('nav ul');
+            
+            menuToggle.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+
+            // Tab Navigation
+            const navLinks = document.querySelectorAll('.nav-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links and tabs
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    tabContents.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked link and corresponding tab
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab') + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Show admin tab navigation if admin tab is active
+                    const adminTabNav = document.getElementById('admin-tab-nav');
+                    if (this.getAttribute('data-tab') === 'admin') {
+                        adminTabNav.classList.add('active');
+                    } else {
+                        adminTabNav.classList.remove('active');
+                    }
+                    
+                    // Close mobile menu if open
+                    navMenu.classList.remove('active');
+                });
+            });
+
+            // Admin Tab Navigation
+            const adminTabBtns = document.querySelectorAll('.tab-btn');
+            const adminTabContents = document.querySelectorAll('.admin-tab-content');
+            
+            adminTabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons and tabs
+                    adminTabBtns.forEach(b => b.classList.remove('active'));
+                    adminTabContents.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked button and corresponding tab
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-admin-tab') + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // Smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#poll') {
+                        // Switch to poll tab
+                        document.querySelector('[data-tab="poll"]').click();
+                    } else if (targetId === '#results') {
+                        // Switch to results tab
+                        document.querySelector('[data-tab="results"]').click();
+                    }
+                    
+                    // Close mobile menu if open
+                    navMenu.classList.remove('active');
+                });
+            });
+
+            // Search functionality
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('search-input');
+            const categorySelect = document.getElementById('category-select');
+            const filterTags = document.getElementById('filter-tags');
+            
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                const category = categorySelect.value;
+                
+                if (searchTerm) {
+                    addFilterTag(category, searchTerm);
+                    filterRiders();
+                    searchInput.value = '';
+                }
+            });
+            
+            function addFilterTag(category, term) {
+                const tag = document.createElement('div');
+                tag.className = 'filter-tag';
+                tag.innerHTML = `
+                    ${category !== 'all' ? `${category}: ` : ''}${term}
+                    <i class="fas fa-times"></i>
+                `;
+                
+                tag.querySelector('i').addEventListener('click', function() {
+                    tag.remove();
+                    filterRiders();
+                });
+                
+                filterTags.appendChild(tag);
+            }
+            
+            function filterRiders() {
+                const tags = Array.from(filterTags.querySelectorAll('.filter-tag'));
+                const riderCards = document.querySelectorAll('.rider-card');
+                
+                riderCards.forEach(card => {
+                    let showCard = true;
+                    
+                    if (tags.length > 0) {
+                        showCard = tags.every(tag => {
+                            const tagText = tag.textContent.trim().toLowerCase();
+                            const riderName = card.querySelector('.rider-name').textContent.toLowerCase();
+                            const riderCountry = card.querySelector('.rider-details span').textContent.toLowerCase();
+                            const riderTeam = card.querySelector('.rider-team').textContent.toLowerCase();
+                            
+                            return riderName.includes(tagText) || 
+                                   riderCountry.includes(tagText) || 
+                                   riderTeam.includes(tagText);
+                        });
+                    }
+                    
+                    card.style.display = showCard ? 'block' : 'none';
+                });
+            }
+
+            // Cek apakah data pembalap sudah ada di Firebase
+            database.ref('riders').once('value').then(function(snapshot) {
+                const riders = snapshot.val();
+                
+                if (!riders || Object.keys(riders).length === 0) {
+                    // Jika tidak ada data, tambahkan data pembalap
+                    addRidersToFirebase();
+                } else {
+                    // Jika sudah ada data, load riders
+                    loadRidersFromFirebase();
+                }
+            }).catch(function(error) {
+                console.error('Error checking riders data:', error);
+                loadRidersFromFirebase();
+            });
+            
+            // Load current GP
+            loadCurrentGP();
+            
+            // Check if user has already voted
+            const hasVoted = localStorage.getItem('hasVoted');
+            if (hasVoted) {
+                const votedRider = localStorage.getItem('votedRider');
+                setTimeout(() => {
+                    const voteButton = document.querySelector(`.vote-btn[data-rider="${votedRider}"]`);
+                    if (voteButton) {
+                        voteButton.classList.add('voted');
+                        voteButton.textContent = 'Sudah Divote';
+                    }
+                    
+                    // Disable all buttons
+                    document.querySelectorAll('.vote-btn').forEach(button => {
+                        button.disabled = true;
+                    });
+                }, 1000);
+            }
+
+            // Image preview
+            const imageInput = document.getElementById('rider-image');
+            const imagePreview = document.getElementById('image-preview');
+            
+            imageInput.addEventListener('input', function() {
+                const imageUrl = this.value.trim();
+                if (imageUrl) {
+                    imagePreview.querySelector('img').src = imageUrl;
+                    imagePreview.style.display = 'block';
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            });
+
+            // Rider form submission
+            const riderForm = document.getElementById('rider-form');
+            riderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const riderId = document.getElementById('rider-id').value;
+                const riderName = document.getElementById('rider-name').value;
+                const riderNumber = document.getElementById('rider-number').value;
+                const riderCountry = document.getElementById('rider-country').value;
+                const riderTeam = document.getElementById('rider-team').value;
+                const riderManufacturer = document.getElementById('rider-manufacturer').value;
+                const riderImage = document.getElementById('rider-image').value;
+                
+                if (riderId) {
+                    // Update existing rider
+                    database.ref('riders/' + riderId).update({
+                        name: riderName,
+                        number: riderNumber,
+                        country: riderCountry,
+                        team: riderTeam,
+                        manufacturer: riderManufacturer,
+                        image: riderImage
+                    });
+                } else {
+                    // Add new rider
+                    const newId = riderName.toLowerCase().replace(/\s+/g, '-');
+                    database.ref('riders/' + newId).set({
+                        name: riderName,
+                        number: riderNumber,
+                        country: riderCountry,
+                        team: riderTeam,
+                        manufacturer: riderManufacturer,
+                        image: riderImage
+                    });
+                    
+                    // Initialize votes for new rider
+                    database.ref('votes/' + newId).set(0);
+                }
+                
+                // Reset form
+                riderForm.reset();
+                imagePreview.style.display = 'none';
+                
+                // Show notification
+                showNotification('Pembalap berhasil disimpan!');
+            });
+
+            // Reset form button
+            document.getElementById('reset-form').addEventListener('click', function() {
+                riderForm.reset();
+                imagePreview.style.display = 'none';
+            });
+
+            // GP form submission
+            const gpForm = document.getElementById('gp-form');
+            gpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const gpName = document.getElementById('gp-name').value;
+                const gpCountry = document.getElementById('gp-country').value;
+                const gpFlagEmoji = document.getElementById('gp-flag-emoji').value;
+                
+                // Save GP data to Firebase
+                database.ref('currentGP').set({
+                    name: gpName,
+                    country: gpCountry,
+                    flagEmoji: gpFlagEmoji
+                });
+                
+                // Update current GP display
+                updateCurrentGPDisplay(gpName, gpCountry, gpFlagEmoji);
+                
+                // Reset form
+                gpForm.reset();
+                
+                // Show notification
+                showNotification('GP berhasil disimpan!');
+            });
+
+            // Batch import button
+            document.getElementById('batch-import-btn').addEventListener('click', function() {
+                const batchData = document.getElementById('batch-import-textarea').value.trim();
+                
+                if (!batchData) {
+                    showNotification('Silakan masukkan data pembalap');
+                    return;
+                }
+                
+                const lines = batchData.split('\n');
+                let successCount = 0;
+                let errorCount = 0;
+                
+                lines.forEach(line => {
+                    const parts = line.split(',').map(part => part.trim());
+                    
+                    if (parts.length >= 6) {
+                        const name = parts[0];
+                        const number = parts[1];
+                        const country = parts[2];
+                        const team = parts[3];
+                        const manufacturer = parts[4];
+                        const image = parts[5];
+                        const id = name.toLowerCase().replace(/\s+/g, '-');
+                        
+                        database.ref('riders/' + id).set({
+                            name: name,
+                            number: number,
+                            country: country,
+                            team: team,
+                            manufacturer: manufacturer,
+                            image: image
+                        }).then(function() {
+                            // Initialize votes for new rider
+                            database.ref('votes/' + id).set(0);
+                            successCount++;
+                            
+                            if (successCount + errorCount === lines.length) {
+                                document.getElementById('batch-import-textarea').value = '';
+                                loadRidersTableFromFirebase();
+                                loadRidersFromFirebase();
+                                showNotification(`Berhasil mengimport ${successCount} pembalap`);
+                            }
+                        }).catch(function(error) {
+                            console.error('Error importing rider:', error);
+                            errorCount++;
+                            
+                            if (successCount + errorCount === lines.length) {
+                                document.getElementById('batch-import-textarea').value = '';
+                                loadRidersTableFromFirebase();
+                                loadRidersFromFirebase();
+                                showNotification(`Berhasil mengimport ${successCount} pembalap, gagal ${errorCount}`);
+                            }
+                        });
+                    } else {
+                        errorCount++;
+                        
+                        if (successCount + errorCount === lines.length) {
+                            document.getElementById('batch-import-textarea').value = '';
+                            loadRidersTableFromFirebase();
+                            loadRidersFromFirebase();
+                            showNotification(`Berhasil mengimport ${successCount} pembalap, gagal ${errorCount}`);
+                        }
+                    }
+                });
+            });
+
+            // Reset votes button
+            document.getElementById('reset-votes').addEventListener('click', function() {
+                if (confirm('Apakah Anda yakin ingin mereset semua voting?')) {
+                    // Get all riders
+                    database.ref('riders').once('value', function(snapshot) {
+                        const riders = snapshot.val();
+                        
+                        if (riders) {
+                            // Reset votes for each rider
+                            Object.keys(riders).forEach(riderId => {
+                                database.ref('votes/' + riderId).set(0);
+                            });
+                            
+                            // Clear local storage
+                            localStorage.removeItem('hasVoted');
+                            localStorage.removeItem('votedRider');
+                            
+                            // Show notification
+                            showNotification('Semua voting telah direset!');
+                            
+                            // Reload data
+                            loadRidersFromFirebase();
+                            loadVotesTableFromFirebase();
+                            loadLiveResults();
+                        } else {
+                            showNotification('Tidak ada data pembalap!');
+                        }
+                    });
+                }
+            });
+
+            // Export data button
+            document.getElementById('export-data').addEventListener('click', function() {
+                // Get riders data
+                database.ref('riders').once('value').then(function(ridersSnapshot) {
+                    const riders = ridersSnapshot.val();
+                    
+                    if (!riders) {
+                        showNotification('Tidak ada data untuk diekspor!');
+                        return;
+                    }
+                    
+                    // Get votes data
+                    return database.ref('votes').once('value').then(function(votesSnapshot) {
+                        const votes = votesSnapshot.val() || {};
+                        
+                        // Get current GP data
+                        return database.ref('currentGP').once('value').then(function(gpSnapshot) {
+                            const currentGP = gpSnapshot.val();
+                            
+                            const data = {
+                                riders: riders,
+                                votes: votes,
+                                currentGP: currentGP,
+                                exportDate: new Date().toISOString()
+                            };
+                            
+                            const dataStr = JSON.stringify(data, null, 2);
+                            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                            
+                            const exportFileDefaultName = 'motogp-poll-data.json';
+                            
+                            const linkElement = document.createElement('a');
+                            linkElement.setAttribute('href', dataUri);
+                            linkElement.setAttribute('download', exportFileDefaultName);
+                            linkElement.click();
+                            
+                            // Show notification
+                            showNotification('Data berhasil diekspor!');
+                        });
+                    });
+                });
+            });
+
+            // Load riders table
+            loadRidersTableFromFirebase();
+            
+            // Load votes table
+            loadVotesTableFromFirebase();
+            
+            // Load live results
+            loadLiveResults();
+        });
+
+        // Fungsi untuk menambahkan data pembalap ke Firebase
+        function addRidersToFirebase() {
+            ridersData.forEach(rider => {
+                database.ref('riders/' + rider.id).set({
+                    name: rider.name,
+                    number: rider.number,
+                    country: rider.country,
+                    team: rider.team,
+                    manufacturer: rider.manufacturer,
+                    image: rider.image
+                });
+                
+                // Initialize votes for each rider
+                database.ref('votes/' + rider.id).set(0);
+            });
+            
+            // Tampilkan notifikasi
+            showNotification('Data pembalap berhasil ditambahkan!');
+            
+            // Load riders setelah menambahkan data
+            setTimeout(() => {
+                loadRidersFromFirebase();
+                loadRidersTableFromFirebase();
+                loadLiveResults();
+            }, 1000);
+        }
+
+        function loadRidersFromFirebase() {
+            // Get riders from Firebase
+            database.ref('riders').once('value').then(function(snapshot) {
+                const riders = snapshot.val();
+                
+                if (!riders || Object.keys(riders).length === 0) {
+                    // Show empty state
+                    const ridersContainer = document.getElementById('riders-container');
+                    ridersContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-motorcycle"></i>
+                            <h3>Belum Ada Pembalap</h3>
+                            <p>Silakan tambahkan pembalap melalui halaman admin</p>
+                            <a href="#admin" class="btn">Ke Halaman Admin</a>
+                        </div>
+                    `;
+                    
+                    // Show empty state for results
+                    const resultsContainer = document.getElementById('results-container');
+                    resultsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <h3>Belum Ada Data Voting</h3>
+                            <p>Silakan tambahkan pembalap terlebih dahulu</p>
+                            <a href="#admin" class="btn">Ke Halaman Admin</a>
+                        </div>
+                    `;
+                    
+                    return;
+                }
+                
+                // Get votes from Firebase
+                database.ref('votes').once('value').then(function(votesSnapshot) {
+                    const votes = votesSnapshot.val() || {};
+                    
+                    // Display riders
+                    displayRiders(riders, votes);
+                    
+                    // Display results
+                    displayResults(riders, votes);
+                });
+            }).catch(function(error) {
+                console.error('Error loading riders:', error);
+                
+                // Show error message
+                const ridersContainer = document.getElementById('riders-container');
+                ridersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Terjadi Kesalahan</h3>
+                        <p>Gagal memuat data pembalap. Silakan coba lagi nanti.</p>
+                    </div>
+                `;
+            });
+        }
+
+        function displayRiders(riders, votes) {
+            const ridersContainer = document.getElementById('riders-container');
+            ridersContainer.innerHTML = '';
+            
+            Object.keys(riders).forEach(riderId => {
+                const rider = riders[riderId];
+                const riderCard = document.createElement('div');
+                riderCard.className = 'rider-card';
+                riderCard.innerHTML = `
+                    <div class="rider-number">${rider.number}</div>
+                    <div class="vote-count">${votes[riderId] || 0}</div>
+                    <img src="${rider.image}" alt="${rider.name}">
+                    <div class="rider-info">
+                        <h3 class="rider-name">${rider.name}</h3>
+                        <div class="rider-details">
+                            <i class="fas fa-flag"></i>
+                            <span>${rider.country}</span>
+                        </div>
+                        <div class="rider-team">${rider.team}</div>
+                        <button class="vote-btn" data-rider="${riderId}">Vote</button>
+                    </div>
+                `;
+                ridersContainer.appendChild(riderCard);
+            });
+            
+            // Add event listeners to vote buttons
+            const voteButtons = document.querySelectorAll('.vote-btn');
+            
+            voteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const hasVoted = localStorage.getItem('hasVoted');
+                    if (hasVoted) return;
+                    
+                    const riderId = this.getAttribute('data-rider');
+                    
+                    // Update votes in Firebase
+                    database.ref('votes/' + riderId).once('value').then(function(snapshot) {
+                        const currentVotes = snapshot.val() || 0;
+                        const newVotes = currentVotes + 1;
+                        
+                        database.ref('votes/' + riderId).set(newVotes).then(function() {
+                            // Save user vote
+                            localStorage.setItem('hasVoted', true);
+                            localStorage.setItem('votedRider', riderId);
+                            
+                            // Update UI
+                            button.classList.add('voted');
+                            button.textContent = 'Sudah Divote';
+                            
+                            // Disable all buttons
+                            voteButtons.forEach(btn => {
+                                btn.disabled = true;
+                            });
+                            
+                            // Update vote count
+                            const voteCount = button.closest('.rider-card').querySelector('.vote-count');
+                            voteCount.textContent = newVotes;
+                            
+                            // Update results
+                            database.ref('riders').once('value').then(function(ridersSnapshot) {
+                                const riders = ridersSnapshot.val();
+                                database.ref('votes').once('value').then(function(votesSnapshot) {
+                                    const votes = votesSnapshot.val() || {};
+                                    displayResults(riders, votes);
+                                    
+                                    // Update votes table
+                                    loadVotesTableFromFirebase();
+                                    
+                                    // Update live results
+                                    loadLiveResults();
+                                });
+                            });
+                            
+                            // Show notification
+                            showNotification('Terima kasih telah melakukan voting!');
+                        });
+                    }).catch(function(error) {
+                        console.error('Error updating votes:', error);
+                        showNotification('Gagal menyimpan vote. Silakan coba lagi.');
+                    });
+                });
+            });
+        }
+
+        function displayResults(riders, votes) {
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
+            
+            // Calculate total votes
+            let totalVotes = 0;
+            Object.values(votes).forEach(count => {
+                totalVotes += count;
+            });
+            
+            if (totalVotes === 0) {
+                // Show empty state for results
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>Belum Ada Voting</h3>
+                        <p>Belum ada yang melakukan voting</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort riders by votes
+            const sortedRiderIds = Object.keys(riders).sort((a, b) => {
+                return (votes[b] || 0) - (votes[a] || 0);
+            });
+            
+            sortedRiderIds.forEach(riderId => {
+                const rider = riders[riderId];
+                const voteCount = votes[riderId] || 0;
+                const percentage = Math.round((voteCount / totalVotes) * 100);
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <div class="result-header">
+                        <h4>${rider.name} (#${rider.number})</h4>
+                        <span class="result-percentage">${percentage}% (${voteCount} votes)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" data-rider="${riderId}" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                resultsContainer.appendChild(resultItem);
+            });
+        }
+
+        function loadCurrentGP() {
+            // Get current GP from Firebase
+            database.ref('currentGP').once('value').then(function(snapshot) {
+                const currentGP = snapshot.val();
+                
+                if (currentGP) {
+                    updateCurrentGPDisplay(currentGP.name, currentGP.country, currentGP.flagEmoji);
+                }
+            }).catch(function(error) {
+                console.error('Error loading current GP:', error);
+            });
+        }
+
+        function updateCurrentGPDisplay(name, country, flagEmoji) {
+            // Update current GP display in admin
+            document.getElementById('current-gp-flag').textContent = flagEmoji;
+            document.getElementById('current-gp-details').textContent = `${name}, ${country}`;
+            
+            // Update current GP display in live results
+            document.getElementById('live-gp-flag').textContent = flagEmoji;
+            document.getElementById('live-gp-details').textContent = `${name}, ${country}`;
+        }
+
+        function loadLiveResults() {
+            const liveResultsGrid = document.getElementById('live-results-grid');
+            liveResultsGrid.innerHTML = '';
+            
+            // Get riders from Firebase
+            database.ref('riders').once('value').then(function(ridersSnapshot) {
+                const riders = ridersSnapshot.val();
+                
+                if (!riders || Object.keys(riders).length === 0) {
+                    liveResultsGrid.innerHTML = '<div class="empty-state"><p>Belum ada data pembalap</p></div>';
+                    return;
+                }
+                
+                // Get votes from Firebase
+                return database.ref('votes').once('value').then(function(votesSnapshot) {
+                    const votes = votesSnapshot.val() || {};
+                    
+                    // Calculate total votes
+                    let totalVotes = 0;
+                    Object.values(votes).forEach(count => {
+                        totalVotes += count;
+                    });
+                    
+                    if (totalVotes === 0) {
+                        liveResultsGrid.innerHTML = '<div class="empty-state"><p>Belum ada voting</p></div>';
+                        return;
+                    }
+                    
+                    // Sort riders by votes
+                    const sortedRiderIds = Object.keys(riders).sort((a, b) => {
+                        return (votes[b] || 0) - (votes[a] || 0);
+                    });
+                    
+                    // Display top 5 riders
+                    const topRiders = sortedRiderIds.slice(0, 5);
+                    
+                    topRiders.forEach((riderId, index) => {
+                        const rider = riders[riderId];
+                        const voteCount = votes[riderId] || 0;
+                        const percentage = Math.round((voteCount / totalVotes) * 100);
+                        
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'live-result-item';
+                        resultItem.innerHTML = `
+                            <div class="live-result-position">${index + 1}</div>
+                            <div class="live-result-info">
+                                <div class="live-result-name">${rider.name}</div>
+                                <div class="live-result-votes">${voteCount} votes (${percentage}%)</div>
+                            </div>
+                        `;
+                        liveResultsGrid.appendChild(resultItem);
+                    });
+                });
+            }).catch(function(error) {
+                console.error('Error loading live results:', error);
+                liveResultsGrid.innerHTML = '<div class="empty-state"><p>Gagal memuat data</p></div>';
+            });
+        }
+
+        function loadRidersTableFromFirebase() {
+            const ridersTableBody = document.getElementById('riders-table-body');
+            ridersTableBody.innerHTML = '';
+            
+            // Get riders from Firebase
+            database.ref('riders').once('value').then(function(snapshot) {
+                const riders = snapshot.val();
+                
+                if (!riders || Object.keys(riders).length === 0) {
+                    ridersTableBody.innerHTML = '<tr><td colspan="6">Tidak ada data pembalap</td></tr>';
+                    return;
+                }
+                
+                let index = 1;
+                Object.keys(riders).forEach(riderId => {
+                    const rider = riders[riderId];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index++}</td>
+                        <td>${rider.name}</td>
+                        <td>${rider.country}</td>
+                        <td>${rider.team}</td>
+                        <td>${rider.manufacturer}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-edit" data-id="${riderId}">Edit</button>
+                                <button class="btn-delete" data-id="${riderId}">Hapus</button>
+                            </div>
+                        </td>
+                    `;
+                    ridersTableBody.appendChild(row);
+                });
+                
+                // Add event listeners to edit buttons
+                const editButtons = document.querySelectorAll('.btn-edit');
+                editButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const riderId = this.getAttribute('data-id');
+                        
+                        // Get rider data from Firebase
+                        database.ref('riders/' + riderId).once('value').then(function(snapshot) {
+                            const rider = snapshot.val();
+                            
+                            if (rider) {
+                                // Populate form
+                                document.getElementById('rider-id').value = riderId;
+                                document.getElementById('rider-name').value = rider.name;
+                                document.getElementById('rider-number').value = rider.number;
+                                document.getElementById('rider-country').value = rider.country;
+                                document.getElementById('rider-team').value = rider.team;
+                                document.getElementById('rider-manufacturer').value = rider.manufacturer;
+                                document.getElementById('rider-image').value = rider.image;
+                                
+                                // Show image preview
+                                const imagePreview = document.getElementById('image-preview');
+                                imagePreview.querySelector('img').src = rider.image;
+                                imagePreview.style.display = 'block';
+                                
+                                // Scroll to form
+                                document.querySelector('.admin-form').scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }).catch(function(error) {
+                            console.error('Error loading rider data:', error);
+                            showNotification('Gagal memuat data pembalap');
+                        });
+                    });
+                });
+                
+                // Add event listeners to delete buttons
+                const deleteButtons = document.querySelectorAll('.btn-delete');
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const riderId = this.getAttribute('data-id');
+                        
+                        if (confirm('Apakah Anda yakin ingin menghapus pembalap ini?')) {
+                            // Delete rider from Firebase
+                            database.ref('riders/' + riderId).remove().then(function() {
+                                // Delete votes for this rider
+                                database.ref('votes/' + riderId).remove().then(function() {
+                                    // Reload riders table
+                                    loadRidersTableFromFirebase();
+                                    
+                                    // Reload riders on main page
+                                    loadRidersFromFirebase();
+                                    
+                                    // Show notification
+                                    showNotification('Pembalap berhasil dihapus!');
+                                });
+                            }).catch(function(error) {
+                                console.error('Error deleting rider:', error);
+                                showNotification('Gagal menghapus pembalap');
+                            });
+                        }
+                    });
+                });
+            }).catch(function(error) {
+                console.error('Error loading riders table:', error);
+                ridersTableBody.innerHTML = '<tr><td colspan="6">Gagal memuat data</td></tr>';
+            });
+        }
+
+        function loadVotesTableFromFirebase() {
+            const votesTableBody = document.getElementById('votes-table-body');
+            const votesTableBodyAdmin = document.getElementById('votes-table-body-admin');
+            
+            votesTableBody.innerHTML = '';
+            votesTableBodyAdmin.innerHTML = '';
+            
+            // Get riders from Firebase
+            database.ref('riders').once('value').then(function(ridersSnapshot) {
+                const riders = ridersSnapshot.val();
+                
+                if (!riders || Object.keys(riders).length === 0) {
+                    votesTableBody.innerHTML = '<tr><td colspan="3">Tidak ada data pembalap</td></tr>';
+                    votesTableBodyAdmin.innerHTML = '<tr><td colspan="3">Tidak ada data pembalap</td></tr>';
+                    return;
+                }
+                
+                // Get votes from Firebase
+                return database.ref('votes').once('value').then(function(votesSnapshot) {
+                    const votes = votesSnapshot.val() || {};
+                    
+                    // Calculate total votes
+                    let totalVotes = 0;
+                    Object.values(votes).forEach(count => {
+                        totalVotes += count;
+                    });
+                    
+                    if (totalVotes === 0) {
+                        votesTableBody.innerHTML = '<tr><td colspan="3">Belum ada voting</td></tr>';
+                        votesTableBodyAdmin.innerHTML = '<tr><td colspan="3">Belum ada voting</td></tr>';
+                        return;
+                    }
+                    
+                    // Sort riders by votes
+                    const sortedRiderIds = Object.keys(riders).sort((a, b) => {
+                        return (votes[b] || 0) - (votes[a] || 0);
+                    });
+                    
+                    sortedRiderIds.forEach(riderId => {
+                        const rider = riders[riderId];
+                        const voteCount = votes[riderId] || 0;
+                        const percentage = Math.round((voteCount / totalVotes) * 100);
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${rider.name} (#${rider.number})</td>
+                            <td>${voteCount}</td>
+                            <td>${percentage}%</td>
+                        `;
+                        votesTableBody.appendChild(row.cloneNode(true));
+                        votesTableBodyAdmin.appendChild(row);
+                    });
+                });
+            }).catch(function(error) {
+                console.error('Error loading votes table:', error);
+                votesTableBody.innerHTML = '<tr><td colspan="3">Gagal memuat data</td></tr>';
+                votesTableBodyAdmin.innerHTML = '<tr><td colspan="3">Gagal memuat data</td></tr>';
+            });
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
